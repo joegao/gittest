@@ -12,7 +12,7 @@ namespace gitTestproject
 
         public override void ViewDidLoad()
         {
-            //change in the login branch
+            //the change in the login branch 2
             base.ViewDidLoad();
             // Perform any additional setup after loading the view, typically from a nib.
         }
