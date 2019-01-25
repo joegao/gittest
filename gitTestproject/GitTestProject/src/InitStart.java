@@ -13,10 +13,6 @@ public class InitStart {
 	public void addSecondMethod() {
 		
 	}
-	
-	public void addForthMethod() {
-		
-	}
 	public void addThirdMethod() {
 		
 	}
