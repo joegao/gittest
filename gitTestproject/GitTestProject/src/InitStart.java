@@ -5,4 +5,8 @@ public class InitStart {
 		System.out.println("this is a testing!!!");
 		//what is this????
 	}
+	
+	public void addMethod() {
+		
+	}
 }
