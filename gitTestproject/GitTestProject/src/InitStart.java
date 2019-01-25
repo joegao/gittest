@@ -9,4 +9,8 @@ public class InitStart {
 	public void addMethod() {
 		
 	}
+	
+	public void addSecondMethod() {
+		
+	}
 }
