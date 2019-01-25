@@ -19,4 +19,7 @@ public class InitStart {
 	public void addForthMethod() {
 		
 	}
+	public void addForthMethod() {
+		
+	}
 }
