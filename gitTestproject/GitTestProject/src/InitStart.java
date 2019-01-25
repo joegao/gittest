@@ -20,4 +20,7 @@ public class InitStart {
 	public void addThirdMethod() {
 		
 	}
+	public void addForthMethod() {
+		
+	}
 }
