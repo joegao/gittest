@@ -1,23 +1,17 @@
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
+import java.io.IOException;
 
-public class InitStart {
+public class HeaderLoggingInterceptor implements ClientHttpRequestInterceptor {
 
-	public static void main(String args[]) {
-		System.out.println("this is a testing!!!");
-		//what is this????
-	}
-	
-	public void addMethod() {
-		
-	}
-	
-	public void addSecondMethod() {
-		
-	}
-	public void addThirdMethod() {
-		
-	}
-	public void addForthMethod() {
-		
-	}
+	@Override
+	public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
+		// Log the request headers
+		System.out.println("Request Headers: " + request.getHeaders());
 
+		// Proceed with the execution of the request
+		return execution.execute(request, body);
+	}
 }
