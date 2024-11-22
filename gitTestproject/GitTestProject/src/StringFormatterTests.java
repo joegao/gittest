@@ -45,6 +45,26 @@ class StringFormatterTests {
         assertEquals("Dr. John, Jr.", ClientNameFormatter.formatLastName("DR. JOHN, JR."));
     }
 
+    @Test
+    void testNameWithAccents() {
+        // Accents with lowercase input
+        assertEquals("Émilie", ClientNameFormatter.formatFirstName("émilie"));
+        assertEquals("José", ClientNameFormatter.formatFirstName("josÉ"));
+        assertEquals("François", ClientNameFormatter.formatLastName("franÇois"));
+
+        // Accents with mixed-case input
+        assertEquals("Peña", ClientNameFormatter.formatLastName("peÑA"));
+        assertEquals("Gràcia", ClientNameFormatter.formatFirstName("grÀcia"));
+
+        // Names with tilde and umlaut
+        assertEquals("São", ClientNameFormatter.formatFirstName("sÃo"));
+        assertEquals("Müller", ClientNameFormatter.formatLastName("mÜller"));
+
+        // Standard names without accents
+        assertEquals("Marie", ClientNameFormatter.formatFirstName("marie"));
+        assertEquals("Jean-Paul", ClientNameFormatter.formatLastName("jean-paul"));
+    }
+
 
     @Test
     void testFormatAddress() {
