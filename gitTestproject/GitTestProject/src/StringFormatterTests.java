@@ -23,6 +23,30 @@ class StringFormatterTests {
     }
 
     @Test
+    void testSpecialCharactersInNamesWithPredefinedList() {
+        // Apostrophes, Hyphens, and Slashes
+        assertEquals("O'Connor-Lee", ClientNameFormatter.formatLastName("O'CONNOR-LEE"));
+        assertEquals("Smith/Jones", ClientNameFormatter.formatLastName("SMITH/JONES"));
+
+        // Plus and Ampersand
+        assertEquals("John+Jane", ClientNameFormatter.formatFirstName("JOHN+JANE"));
+        assertEquals("Mary & Anne", ClientNameFormatter.formatFirstName("MARY & ANNE"));
+
+        // Parentheses, Brackets, and Quotation Marks
+        assertEquals("John (The Brave)", ClientNameFormatter.formatLastName("JOHN (THE BRAVE)"));
+        assertEquals("Smith [The Brave]", ClientNameFormatter.formatLastName("SMITH [THE BRAVE]"));
+        assertEquals("John \"The Brave\" Smith", ClientNameFormatter.formatLastName("JOHN \"THE BRAVE\" SMITH"));
+
+        // Numbers
+        assertEquals("Henry IV", ClientNameFormatter.formatLastName("HENRY IV"));
+        assertEquals("Agent47", ClientNameFormatter.formatFirstName("AGENT47"));
+
+        // Periods and Commas
+        assertEquals("Dr. John, Jr.", ClientNameFormatter.formatLastName("DR. JOHN, JR."));
+    }
+
+
+    @Test
     void testFormatAddress() {
         // General address examples
         assertEquals("123 Front Street, Apt 987, Po Box 500",
