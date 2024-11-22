@@ -64,7 +64,7 @@ class StringFormatterTests {
         assertEquals("Marie", ClientNameFormatter.formatFirstName("marie"));
         assertEquals("Jean-Paul", ClientNameFormatter.formatLastName("jean-paul"));
     }
-
+2o
 
     @Test
     void testFormatAddress() {
