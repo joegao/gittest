@@ -1,35 +1,41 @@
 package com.example.util;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 public class StringFormatter {
 
-    private static final Set<String> NAME_PREFIXES = new HashSet<>(Arrays.asList(
-            "Mc", "Mac", "O'", "D'", "De", "Van", "Von", "Le", "La", "Da", "Di", "Du", "Del",
-            "De La", "Van Der", "De Los", "St.", "San", "Dos"
-    ));
+    // Canadian Provinces and Territories
+    private static final Set<String> CANADIAN_PROVINCES = Set.of(
+            "AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT"
+    );
 
-    private static final Set<String> PROVINCE_STATE_COUNTRY_CODES = Set.of(
-            // Canadian Provinces
-            "AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT",
-            // U.S. States and Territories
+    // U.S. States and Territories
+    private static final Set<String> US_STATES = Set.of(
             "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL",
             "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT",
             "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI",
-            "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC",
-            // Countries
+            "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC"
+    );
+
+    // Country Codes
+    private static final Set<String> COUNTRY_CODES = Set.of(
             "US", "CA", "GB", "FR", "DE", "IT", "ES", "AU", "JP", "CN", "IN", "RU", "ZA",
             "USA", "CAN", "GBR", "FRA", "DEU", "ITA", "ESP", "AUS", "JPN", "CHN", "IND",
             "RUS", "ZAF"
     );
 
-    private static final Set<String> COUNTRY_CODES_AND_NAMES = Set.of(
-            // Full Country Names
+    // Full Country Names
+    private static final Set<String> COUNTRY_NAMES = Set.of(
             "United States", "United States of America", "Canada", "United Kingdom",
             "France", "Germany", "Italy", "Spain", "Australia", "Japan", "China",
             "India", "Russia", "South Africa"
+    );
+
+    // Special Name Prefixes
+    private static final Set<String> NAME_PREFIXES = Set.of(
+            "Mc", "Mac", "O'", "D'", "De", "Van", "Von", "Le", "La", "Da", "Di", "Du", "Del",
+            "De La", "Van Der", "De Los", "St.", "San", "Dos"
     );
 
     // Format Names (First Name, Last Name, Full Name)
@@ -61,13 +67,15 @@ public class StringFormatter {
 
         String[] parts = input.split("(?=[,])|(?<=[,])|(?=[ ])|(?<=[ ])");
         return Arrays.stream(parts)
-                .map(part -> PROVINCE_STATE_COUNTRY_CODES.contains(part.toUpperCase())
-                        ? part.toUpperCase()
-                        : COUNTRY_CODES_AND_NAMES.contains(part.toUpperCase())
-                        ? formatCountry(part)
+                .map(part -> CANADIAN_PROVINCES.contains(part.toUpperCase())
+                        ? part.toUpperCase() // Canadian Provinces
+                        : US_STATES.contains(part.toUpperCase())
+                        ? part.toUpperCase() // US States
+                        : COUNTRY_CODES.contains(part.toUpperCase())
+                        ? formatCountry(part) // Countries
                         : part.matches("(?i)[A-Z]\\d[A-Z] ?\\d[A-Z]\\d|\\d{5}(-\\d{4})?")
-                        ? formatPostalCode(part)
-                        : capitalizeAddressWord(part))
+                        ? formatPostalCode(part) // Postal Codes
+                        : capitalizeAddressWord(part)) // Default
                 .reduce("", String::concat)
                 .trim();
     }
@@ -105,10 +113,10 @@ public class StringFormatter {
 
     // Format Countries
     public static String formatCountry(String input) {
-        if (COUNTRY_CODES_AND_NAMES.contains(input.toUpperCase())) {
+        if (COUNTRY_CODES.contains(input.toUpperCase())) {
             return input.toUpperCase();
         }
-        for (String country : COUNTRY_CODES_AND_NAMES) {
+        for (String country : COUNTRY_NAMES) {
             if (country.equalsIgnoreCase(input)) {
                 return capitalizeWord(country);
             }
