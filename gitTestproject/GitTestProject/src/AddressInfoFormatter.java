@@ -1,3 +1,5 @@
+package com.example.util;
+
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -5,6 +7,22 @@ public class AddressInfoFormatter {
 
     // Words to remain fully uppercase
     private static final Set<String> UPPERCASE_WORDS = Set.of("PO", "BOX", "APT", "SUITE", "FL", "FLOOR");
+
+    // Canadian province abbreviations
+    private static final Set<String> CANADIAN_PROVINCES = Set.of(
+            "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"
+    );
+
+    // US state abbreviations
+    private static final Set<String> US_STATES = Set.of(
+            "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN",
+            "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV",
+            "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+            "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+    );
+
+    // Country codes
+    private static final Set<String> COUNTRY_CODES = Set.of("CA", "US");
 
     // Regex patterns
     private static final Pattern CANADIAN_POSTAL_CODE_REGEX = Pattern.compile("^[A-Z]\\d[A-Z] ?\\d[A-Z]\\d$");
@@ -39,16 +57,17 @@ public class AddressInfoFormatter {
     }
 
     /**
-     * Process a single part of the address (street, apartment, postal code, etc.).
-     *
-     * @param part the raw part of the address
-     * @return the formatted part
+     * Process a single part of the address.
      */
     private static String processAddressPart(String part) {
         if (CANADIAN_POSTAL_CODE_REGEX.matcher(part).matches()) {
             return formatCanadianPostalCode(part);
         } else if (US_ZIP_CODE_REGEX.matcher(part).matches()) {
             return part;
+        } else if (CANADIAN_PROVINCES.contains(part.toUpperCase()) || US_STATES.contains(part.toUpperCase())) {
+            return part.toUpperCase();
+        } else if (COUNTRY_CODES.contains(part.toUpperCase())) {
+            return part.toUpperCase();
         }
 
         String[] words = part.split("\\s+");
