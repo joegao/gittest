@@ -1,14 +1,14 @@
 package com.yourpackage.aspect;
 
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import com.yourpackage.config.LoggingProperties;
-import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.*;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.util.*;
 
 @Aspect
@@ -17,97 +17,83 @@ public class LoggingAspect {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
     private final Set<String> sensitiveFields;
+    private final ObjectMapper objectMapper;
 
     public LoggingAspect(LoggingProperties loggingProperties) {
         this.sensitiveFields = loggingProperties.getSensitiveFieldSet();
+
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT); // Enable pretty print
     }
 
     @Pointcut("execution(* com.yourpackage..service..*(..))")
     public void serviceMethods() {}
 
-    @Before("serviceMethods()")
-    public void logMethodArguments(JoinPoint joinPoint) {
+    @Around("serviceMethods()")
+    public Object logMethodCallAndReturn(ProceedingJoinPoint joinPoint) throws Throwable {
         String methodName = joinPoint.getSignature().toShortString();
         Object[] args = joinPoint.getArgs();
         String[] paramNames = ((MethodSignature) joinPoint.getSignature()).getParameterNames();
 
-        logger.info("Calling method: {}", methodName);
+        // Build and mask arguments
+        StringBuilder logBuilder = new StringBuilder("Calling method: ").append(methodName).append(" | Args: [");
+
         for (int i = 0; i < args.length; i++) {
             String paramName = (paramNames != null && i < paramNames.length) ? paramNames[i] : "arg" + i;
             Object arg = args[i];
-            logger.info("Arg[{}] ({}): {}", i, paramName, processValue(arg, paramName));
+            String masked = serializeAndMask(arg, paramName);
+
+            logBuilder.append(paramName).append("=").append(masked);
+            if (i < args.length - 1) {
+                logBuilder.append(", ");
+            }
+        }
+
+        logBuilder.append("]");
+        logger.info(logBuilder.toString());
+
+        // Proceed with method execution
+        Object result = joinPoint.proceed();
+
+        // Log masked return value
+        logger.info("Return from {}: {}", methodName, serializeAndMask(result, "return"));
+
+        return result;
+    }
+
+    private String serializeAndMask(Object obj, String contextName) {
+        if (obj == null) return "null";
+
+        try {
+            JsonNode node = objectMapper.valueToTree(obj);
+            maskJson(node);
+            return objectMapper.writeValueAsString(node);
+        } catch (Exception e) {
+            return "[ERROR serializing: " + e.getMessage() + "]";
         }
     }
 
-    private String processValue(Object value, String contextName) {
-        if (value == null) return "null";
+    private void maskJson(JsonNode node) {
+        if (node.isObject()) {
+            ObjectNode objNode = (ObjectNode) node;
+            Iterator<Map.Entry<String, JsonNode>> fields = objNode.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                String fieldName = entry.getKey();
+                JsonNode childNode = entry.getValue();
 
-        Class<?> clazz = value.getClass();
-
-        if (value instanceof String) {
-            return shouldMask(contextName) ? maskValue((String) value) : value.toString();
-        }
-
-        if (isPrimitiveOrWrapper(clazz)) {
-            return value.toString();
-        }
-
-        if (clazz.isArray()) {
-            int length = Array.getLength(value);
-            List<String> items = new ArrayList<>();
-            for (int i = 0; i < length; i++) {
-                items.add(processValue(Array.get(value, i), contextName));
+                if (shouldMask(fieldName) && childNode.isTextual()) {
+                    objNode.put(fieldName, maskValue(childNode.asText()));
+                } else {
+                    maskJson(childNode);
+                }
             }
-            return items.toString();
-        }
-
-        if (value instanceof Collection<?>) {
-            Collection<?> collection = (Collection<?>) value;
-            List<String> items = new ArrayList<>();
-            for (Object item : collection) {
-                items.add(processValue(item, contextName));
-            }
-            return items.toString();
-        }
-
-        if (value instanceof Map<?, ?>) {
-            Map<?, ?> map = (Map<?, ?>) value;
-            Map<String, String> maskedMap = new LinkedHashMap<>();
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                String keyStr = String.valueOf(entry.getKey());
-                Object val = entry.getValue();
-                String maskedVal = shouldMask(keyStr) ? maskValue(String.valueOf(val)) : processValue(val, keyStr);
-                maskedMap.put(keyStr, maskedVal);
-            }
-            return maskedMap.toString();
-        }
-
-        return maskObjectFields(value);
-    }
-
-    private String maskObjectFields(Object obj) {
-        Class<?> clazz = obj.getClass();
-        StringBuilder sb = new StringBuilder(clazz.getSimpleName()).append(" { ");
-
-        for (Field field : clazz.getDeclaredFields()) {
-            field.setAccessible(true);
-            try {
-                Object value = field.get(obj);
-                String fieldName = field.getName();
-
-                sb.append(fieldName)
-                        .append("=")
-                        .append(shouldMask(fieldName) && value instanceof String
-                                ? maskValue((String) value)
-                                : processValue(value, fieldName))
-                        .append(", ");
-            } catch (IllegalAccessException e) {
-                sb.append(field.getName()).append("=ERROR, ");
+        } else if (node.isArray()) {
+            for (JsonNode item : node) {
+                maskJson(item);
             }
         }
-
-        sb.append(" }");
-        return sb.toString();
+        // primitives are left untouched
     }
 
     private boolean shouldMask(String name) {
@@ -120,13 +106,5 @@ public class LoggingAspect {
         if (value.length() <= visibleCount) return "****";
         int maskedLength = value.length() - visibleCount;
         return "*".repeat(maskedLength) + value.substring(maskedLength);
-    }
-
-    private boolean isPrimitiveOrWrapper(Class<?> clazz) {
-        return clazz.isPrimitive() ||
-                clazz == String.class ||
-                Number.class.isAssignableFrom(clazz) ||
-                clazz == Boolean.class ||
-                clazz == Character.class;
     }
 }
